@@ -41,6 +41,7 @@ Everything you need to master autonomous iteration — from first run to advance
 | [Chains & Combinations](chains-and-combinations.md) | Multi-command pipelines and chain patterns |
 | [Examples by Domain](examples-by-domain.md) | Real-world examples: software, sales, marketing, DevOps, ML, HR |
 | [Advanced Patterns](advanced-patterns.md) | Guards, MCP servers, CI/CD, custom scripts, FAQ |
+| **[Scenario Guides](scenario/)** | **10 real-world scenario walkthroughs — chat, SaaS, CI/CD, healthcare, finance, IoT, and more** |
 
 ---
 
