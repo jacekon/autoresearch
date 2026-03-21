@@ -71,16 +71,24 @@ At step [4/7], the script pauses and shows the changelog. Review these files:
 - **guide/chains-and-combinations.md** — new chain patterns possible?
 - **guide/advanced-patterns.md** — new verify commands, MCP patterns, FAQ?
 
+### guide/scenario/
+- **guide/scenario/README.md** — scenario guide chain suggestions updated?
+- **Domain-specific guides** — new scenario domains or patterns?
+
 ### CONTRIBUTING.md
 - **Repository Structure** — does the tree reflect new files?
 - **What Each File Does** — any new files to document?
 - **Adding a New Sub-Command** — steps still accurate?
 - **High-Value Contributions** — new contribution types?
 
+### COMPARISON.md
+- **Subcommand count** — does it match the current number?
+- **Feature comparison table** — any new capabilities to add?
+
 ### Tips
 - Edit docs in another terminal while the script is paused
 - Type `skip` at the prompt to continue without doc changes
-- The script stages any doc changes automatically (README.md, guide/, CONTRIBUTING.md)
+- The script stages any doc changes automatically (README.md, guide/, CONTRIBUTING.md, COMPARISON.md)
 
 ## Distribution Sync
 

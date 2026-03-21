@@ -155,7 +155,9 @@ echo "  Before continuing, review these files for accuracy:"
 echo ""
 echo "  README.md        — version refs, command table, feature descriptions"
 echo "  guide/           — individual command guides, examples, advanced patterns"
+echo "  guide/scenario/  — scenario guide, domain examples, edge case patterns"
 echo "  CONTRIBUTING.md  — repo structure, file table, sub-command steps"
+echo "  COMPARISON.md    — subcommand count, feature comparison table"
 echo ""
 
 # Show what changed since last tag
@@ -173,9 +175,9 @@ read -rp "  Press ENTER when docs are ready (or 'skip' to continue as-is): " DOC
 
 if [[ "$DOC_RESPONSE" != "skip" ]]; then
   # Check if README or EXAMPLES were modified
-  if [[ -n "$(git status --porcelain -- README.md guide/ CONTRIBUTING.md)" ]]; then
+  if [[ -n "$(git status --porcelain -- README.md guide/ CONTRIBUTING.md COMPARISON.md)" ]]; then
     echo "    Staging doc updates..."
-    git add README.md guide/ CONTRIBUTING.md 2>/dev/null || true
+    git add README.md guide/ CONTRIBUTING.md COMPARISON.md 2>/dev/null || true
   fi
 fi
 
@@ -224,7 +226,9 @@ ${CHANGELOG:-"No previous tag found — initial release."}
 - [x] guide/README.md version badge updated
 - [ ] README.md content reviewed for accuracy
 - [ ] guide/ reviewed — command guides, examples, chains
+- [ ] guide/scenario/ reviewed — scenario guides, domain examples
 - [ ] CONTRIBUTING.md reviewed — repo structure, file table
+- [ ] COMPARISON.md reviewed — subcommand count, feature table
 - [ ] All tests passing
 
 ### Files changed

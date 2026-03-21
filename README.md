@@ -7,7 +7,7 @@
 Based on [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) — constraint + mechanical metric + autonomous iteration = compounding gains.
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-blue?logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
-[![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)](https://github.com/uditgoenka/autoresearch/releases)
+[![Version](https://img.shields.io/badge/version-1.8.1-blue.svg)](https://github.com/uditgoenka/autoresearch/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [![Based on](https://img.shields.io/badge/Based_on-Karpathy's_Autoresearch-orange)](https://github.com/karpathy/autoresearch)
@@ -290,7 +290,7 @@ Scout codebase → generate docs → validate → fix → repeat. 4 modes: init 
 /autoresearch:learn --mode init --depth deep
 ```
 
-Dynamic doc discovery (scans `docs/*.md`), project-type detection, validation-fix loop (max 3 retries), scale-aware scouting, git-diff scoping for updates, selective single-doc update with `--file`.
+Dynamic doc discovery (scans `docs/*.md`), project-type detection, validation-fix loop (max 3 retries), scale-aware scouting, git-diff scoping for updates, selective single-doc update with `--file`. Auto-generates Mermaid architecture diagrams, conditional docs (API reference, testing guide, config guide, changelog), cross-reference links between docs, and dependency documentation. Supports `--format` for alternative output formats.
 
 ---
 
