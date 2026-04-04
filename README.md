@@ -28,6 +28,26 @@ Based on [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) —
 
 ---
 
+```
+   PLAN           LOOP          DEBUG           FIX          SECURE          SHIP
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│  Goal   │    │ Modify  │    │  Find   │    │  Fix    │    │ STRIDE  │    │ Stage   │
+│  Metric │───▶│ Verify  │───▶│  Bugs   │───▶│ Errors  │───▶│ OWASP   │───▶│ Deploy  │
+│  Scope  │    │ Keep/   │    │ Trace   │    │ Repair  │    │ Red     │    │ Release │
+└─────────┘    │ Discard │    └─────────┘    └─────────┘    │ Team    │    └─────────┘
+  /plan        └─────────┘     /debug          /fix         └─────────┘      /ship
+               /autoresearch                                 /security
+
+               ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+               │ Scenario│    │ Predict │    │  Learn  │    │ Reason  │
+               │  Edge   │    │ 5-Expert│    │  Docs   │    │ Debate  │
+               │  Cases  │    │ Swarm   │    │  Gen    │    │Converge │
+               └─────────┘    └─────────┘    └─────────┘    └─────────┘
+               /scenario      /predict        /learn         /reason
+```
+
+---
+
 ## Why This Exists
 
 [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) demonstrated that a 630-line Python script could autonomously improve ML models overnight — **100 experiments per night** — by following simple principles: one metric, constrained scope, fast verification, automatic rollback, git as memory.
