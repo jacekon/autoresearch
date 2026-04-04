@@ -156,20 +156,31 @@ AskUserQuestion:
 
 1. **Dry run** the verify command on current codebase
 2. Confirm it exits with code 0
-3. Confirm output contains a parseable number
+3. **Extract the metric and validate it is a number** — the final output of the pipeline must match the pattern `^-?[0-9]+\.?[0-9]*$` (integer or decimal, optional leading minus). Anything else is a failure: strings like `"PASS"`, `"85.2%"`, `"342ms"`, empty output, or multi-line output all fail this check.
 4. Record the baseline metric value
 5. If dry run fails → show error, ask user to fix, re-validate
 
 ```
 Dry run result:
   Exit code: {0 or error}
-  Output snippet: {relevant line}
-  Extracted metric: {number}
+  Raw output (last 3 lines): {tail of verify output}
+  Extracted value: {whatever the pipeline produced}
+  Numeric check: ✓ valid number / ✗ not a number — {what was returned}
   Baseline: {number}
   Status: ✓ VALID / ✗ INVALID — {reason}
 ```
 
-**Do not proceed if verify command fails dry run.** Help user fix it.
+**Common dry-run failures and fixes:**
+
+| Extracted Value | Problem | Fix |
+|---|---|---|
+| `85.2%` | Trailing `%` | Add `\| tr -d '%'` to pipeline |
+| `342ms` | Trailing unit | Add `\| grep -oP '[0-9]+\.?[0-9]*'` |
+| *(empty)* | grep matched nothing | Check the grep pattern against actual output |
+| `All files \| 85.2 \| ...` | awk field wrong | Adjust awk field index or add more specific grep |
+| Two numbers on separate lines | Pipeline too broad | Add `head -1` or tighten grep |
+
+**Do not proceed if verify command fails dry run.** Help user fix the pipeline until it produces a single valid number.
 
 ### Phase 7: Confirm & Launch
 

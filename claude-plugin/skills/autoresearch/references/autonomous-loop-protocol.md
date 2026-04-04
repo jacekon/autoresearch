@@ -425,6 +425,40 @@ Run the agreed-upon verification command. Capture output.
 
 **Extract metric:** Parse the verification output for the specific metric number.
 
+**Metric validation (MANDATORY after extraction):**
+
+The extracted value MUST be a valid number before ANY decision logic runs. A non-numeric value means the verify pipeline is broken — the agent must not guess, interpolate, or treat it as zero.
+
+```
+extracted_value = <result of verify pipeline>
+
+# Validate: must match a number (integer or float, optional leading minus)
+IF extracted_value does NOT match pattern: ^-?[0-9]+\.?[0-9]*$
+    STATUS = "metric-error"
+    LOG iteration as:
+      status=metric-error
+      description="Metric extraction returned non-numeric value: '{extracted_value}'"
+    safe_revert()
+
+    # Diagnose: show the raw verify output so the problem is visible
+    PRINT "⚠ Metric extraction failed — got '{extracted_value}' instead of a number"
+    PRINT "Raw verify output (last 5 lines):"
+    PRINT <tail -5 of verify command output>
+    PRINT "Check your Verify command pipeline — the final output must be a single number"
+
+    # If this is the 2nd consecutive metric-error, the verify command is broken.
+    # Do NOT keep iterating with a broken pipeline.
+    IF previous_iteration.status == "metric-error":
+        PRINT "✗ Two consecutive metric extraction failures — verify command is broken. Stopping."
+        STOP (even in unbounded mode)
+
+    # Otherwise, proceed to next iteration (a transient failure is possible
+    # if the codebase is in a state where the verify command can't run cleanly)
+    CONTINUE to next iteration
+```
+
+**Valid statuses** now include `metric-error` alongside `keep`, `discard`, `crash`, `no-op`, `hook-blocked`.
+
 ### Verification Command Templates by Language
 
 | Language | Verify Command | Metric | Direction |
@@ -651,7 +685,7 @@ iteration  commit   metric   status        description
 46         -        -        hook-blocked  pre-commit lint hook rejected formatting in model.py
 ```
 
-**Valid statuses:** `keep`, `keep (reworked)`, `discard`, `crash`, `no-op`, `hook-blocked`
+**Valid statuses:** `keep`, `keep (reworked)`, `discard`, `crash`, `no-op`, `hook-blocked`, `metric-error`
 
 ## Phase 8: Repeat
 

@@ -40,6 +40,7 @@ log_iteration 2 "-" "86.5" "-0.6" "-" "discard" "refactor test helpers (broke 2 
 log_iteration 3 "-" "0.0" "0.0" "-" "crash" "add integration tests (DB connection failed)"
 log_iteration 4 "-" "-" "-" "-" "no-op" "attempted to modify read-only config"
 log_iteration 5 "-" "-" "-" "-" "hook-blocked" "pre-commit lint rejected formatting"
+log_iteration 6 "-" "-" "-" "-" "metric-error" "verify output was 'PASS' — not a number"
 ```
 
 ## Reading & Using the Log
@@ -110,7 +111,7 @@ iteration	commit	metric	delta	guard	status	description
 | metric | float | Measured value from verification |
 | delta | float | Change from previous best (negative = improved for "lower is better") |
 | guard | enum | `pass`, `fail`, or `-` (no guard configured) |
-| status | enum | `baseline`, `keep`, `keep (reworked)`, `discard`, `crash`, `no-op`, `hook-blocked` |
+| status | enum | `baseline`, `keep`, `keep (reworked)`, `discard`, `crash`, `no-op`, `hook-blocked`, `metric-error` |
 | description | string | One-sentence description of what was tried |
 
 ### Example
