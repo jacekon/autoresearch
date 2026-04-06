@@ -541,7 +541,7 @@ After the wizard completes, the user gets a ready-to-paste `/autoresearch` invoc
 
 ## Bounded Iterations
 
-By default, autoresearch loops **forever** until manually interrupted. To run exactly N iterations, add `Iterations: N` to your inline config.
+By default, autoresearch loops until the metric plateaus (no improvement to the best metric for 15 consecutive measured iterations), then asks the user whether to stop, continue, or change strategy. To run exactly N iterations instead, add `Iterations: N` to your inline config.
 
 **Unlimited (default):**
 ```
@@ -562,11 +562,23 @@ After N iterations Claude stops and prints a final summary with baseline → cur
 
 | Scenario | Recommendation |
 |----------|---------------|
-| Run overnight, review in morning | Unlimited (default) |
+| Run overnight, review in morning | Unlimited + `Plateau-Patience: off` |
 | Quick 30-min improvement session | `Iterations: 10` |
 | Targeted fix with known scope | `Iterations: 5` |
 | Exploratory — see if approach works | `Iterations: 15` |
 | CI/CD pipeline integration | `--iterations N` flag (set N based on time budget) |
+| Long run with safety net (default) | Unlimited (plateau detection after 15 iterations) |
+
+### Plateau Detection
+
+In unlimited mode, autoresearch tracks whether the best metric is still improving. If 15 consecutive measured iterations pass without a new best, the loop pauses and asks the user to decide: stop, continue, or change strategy. Configure with `Plateau-Patience: N` (default 15), or disable with `Plateau-Patience: off`. Bounded mode ignores this setting.
+
+```
+/autoresearch
+Goal: Reduce bundle size below 200KB
+Verify: npx esbuild src/index.ts --bundle --minify | wc -c
+Plateau-Patience: 20
+```
 
 ## Setup Phase (Do Once)
 

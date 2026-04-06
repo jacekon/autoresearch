@@ -694,7 +694,7 @@ iteration  commit   metric   status        description
 
 ### Unbounded Mode (default)
 
-Go to Phase 1. **NEVER STOP. NEVER ASK IF YOU SHOULD CONTINUE.**
+Go to Phase 1. **Do not ask "should I keep going?" — keep iterating unless a halt condition fires** (see Plateau Detection below).
 
 ### Bounded Mode (with Iterations: N)
 
@@ -728,6 +728,63 @@ Applies to both modes:
 5. Try the OPPOSITE of what hasn't been working
 6. Try a radical architectural change
 
+### Plateau Detection (unbounded mode)
+
+"Stuck" catches consecutive discards, but a subtler failure mode exists: the agent keeps iterating, occasionally getting a `keep`, yet the *best* metric never actually improves. The loop burns tokens without making real progress.
+
+Track two values across iterations:
+
+```
+best_metric       = baseline metric from iteration 0
+iterations_since_best = 0
+plateau_patience  = 15  (default, configurable via Plateau-Patience: N)
+```
+
+Update after every iteration where a valid metric was extracted:
+
+```
+IF new_metric is better than best_metric (respecting Direction):
+    best_metric = new_metric
+    iterations_since_best = 0
+ELSE:
+    iterations_since_best += 1
+```
+
+Skip iterations with no valid metric (`no-op`, `metric-error`, `hook-blocked`, `crash`) — they don't count toward the patience window because the agent didn't get a real signal.
+
+**When `iterations_since_best >= plateau_patience`:**
+
+```
+PRINT "⚠ Plateau detected — best metric has not improved in {plateau_patience} iterations"
+PRINT "  Best: {best_metric} (iteration #{best_iteration})"
+PRINT "  Current: {current_metric}"
+PRINT "  Last {plateau_patience} iterations: {keeps} keeps, {discards} discards — no net gain"
+
+AskUserQuestion:
+  question: "The metric has plateaued. How do you want to proceed?"
+  header: "Plateau Detected"
+  options:
+    - label: "Stop here"
+      description: "End the loop. Best metric: {best_metric} at iteration #{best_iteration}"
+    - label: "Continue with reset patience"
+      description: "Keep going for another {plateau_patience} iterations before checking again"
+    - label: "Change strategy"
+      description: "I'll adjust the goal, scope, or verify command"
+```
+
+**Configuration:**
+
+```
+/autoresearch
+Goal: Reduce bundle size below 200KB
+Verify: npx esbuild src/index.ts --bundle --minify | wc -c
+Plateau-Patience: 20    # check after 20 iterations without improvement (default: 15)
+```
+
+Set `Plateau-Patience: off` to disable plateau detection entirely and restore the original unbounded behavior. Use this for overnight runs where you accept the token cost.
+
+**Bounded mode:** Plateau detection is disabled. The iteration limit already bounds the run, and the agent should use all N iterations to explore.
+
 ## Crash Recovery
 
 - Syntax error → fix immediately, don't count as separate iteration
@@ -738,7 +795,7 @@ Applies to both modes:
 
 ## Communication
 
-- **DO NOT** ask "should I keep going?" — in unbounded mode, YES. ALWAYS. In bounded mode, continue until N is reached.
+- **DO NOT** ask "should I keep going?" — in unbounded mode, keep iterating unless plateau detection fires. In bounded mode, continue until N is reached.
 - **DO NOT** summarize after each iteration — just log and continue
 - **DO** print a brief one-line status every ~5 iterations (e.g., "Iteration 25: metric at 0.95, 8 keeps / 17 discards")
 - **DO** alert if you discover something surprising or game-changing
