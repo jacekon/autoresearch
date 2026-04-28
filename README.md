@@ -43,13 +43,13 @@ Based on [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) —
   plan            /autoresearch     debug              fix          /autoresearch:      ship
                                                                      security
 
-                  ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-                  │ Scenario │     │ Predict  │     │  Learn   │     │  Reason  │
-                  │   Edge   │     │ 5-Expert │     │   Docs   │     │  Debate  │
-                  │   Cases  │     │  Swarm   │     │   Gen    │     │ Converge │
-                  └──────────┘     └──────────┘     └──────────┘     └──────────┘
-                 /autoresearch:   /autoresearch:   /autoresearch:   /autoresearch:
-                   scenario         predict           learn           reason
+ ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+ │  Probe   │     │ Scenario │     │ Predict  │     │  Learn   │     │  Reason  │
+ │ Require- │     │   Edge   │     │ 5-Expert │     │   Docs   │     │  Debate  │
+ │  ments   │     │   Cases  │     │  Swarm   │     │   Gen    │     │ Converge │
+ └──────────┘     └──────────┘     └──────────┘     └──────────┘     └──────────┘
+/autoresearch:   /autoresearch:   /autoresearch:   /autoresearch:   /autoresearch:
+  probe            scenario         predict           learn           reason
 ```
 
 ---
@@ -558,10 +558,10 @@ autoresearch/
 │   └── release.md                                 ← Release checklist
 ├── .claude/skills/autoresearch/                   ← Claude Code source (canonical)
 │   ├── SKILL.md                                   ← Main skill
-│   └── references/                                ← 12 workflow protocol files
+│   └── references/                                ← 13 workflow protocol files
 ├── .opencode/                                     ← OpenCode port (generated via sync-opencode.sh)
 │   ├── skills/autoresearch/                       ← Adapted SKILL.md + references
-│   ├── commands/                                  ← 10 command files (autoresearch_*.md)
+│   ├── commands/                                  ← 11 command files (autoresearch_*.md)
 │   └── agents/docs-manager.md                     ← Subagent for learn workflow
 ├── .agents/skills/autoresearch/                   ← Codex port (generated via sync-codex.sh)
 │   ├── SKILL.md                                   ← Adapted SKILL.md + references
