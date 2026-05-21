@@ -1,7 +1,7 @@
 {
   "name": "autoresearch",
-  "version": "2.0.04-codex.0",
-  "description": "Autonomous improvement engine for Codex. Preserves the autoresearch command surface with the Codex skill and wrapper CLI.",
+  "version": "2.1.0-codex.0",
+  "description": "Autonomous improvement engine for Codex. 12 commands: iterate, plan, debug, fix, security, ship, scenario, predict, learn, reason, probe, evals.",
   "author": {
     "name": "Udit Goenka",
     "url": "https://github.com/uditgoenka"
@@ -15,13 +15,14 @@
     "automation",
     "debugging",
     "security",
-    "documentation"
+    "documentation",
+    "evals"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Autoresearch",
     "shortDescription": "Autonomous improvement workflows for Codex.",
-    "longDescription": "Ports Autoresearch to Codex with the same subcommands, flags, interactive setup gates, and output directory contracts documented for the Claude distribution.",
+    "longDescription": "12 self-contained commands: core iterate loop, plan, debug, fix, security, ship, scenario, predict, learn, reason, probe, evals. Thin routing SKILL.md + per-command instruction files.",
     "developerName": "Udit Goenka",
     "category": "Productivity",
     "capabilities": [
@@ -32,9 +33,9 @@
     "privacyPolicyURL": "https://github.com/uditgoenka/autoresearch/blob/main/LICENSE",
     "termsOfServiceURL": "https://github.com/uditgoenka/autoresearch/blob/main/LICENSE",
     "defaultPrompt": [
-      "autoresearch:plan Improve test coverage to 90%",
-      "autoresearch:security --diff --fail-on critical",
-      "autoresearch:learn --mode update --scope docs/**/*.md"
+      "$autoresearch plan Improve test coverage to 90%",
+      "$autoresearch security --diff --fail-on critical",
+      "$autoresearch learn --mode update --scope docs/**/*.md"
     ],
     "brandColor": "#0F766E"
   }
