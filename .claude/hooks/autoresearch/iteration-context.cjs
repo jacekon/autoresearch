@@ -4,8 +4,10 @@ const path = require('path');
 
 const {
   isEnabled, safeParseStdin, loadSessionState, saveSessionState,
-  incrementCounter, log, readTsvTail, findRecentTsv, inject
+  incrementCounter, log, readTsvTail, findRecentTsv, inject, failOpen
 } = require('./lib/ar-hook-utils.cjs');
+
+const HOOK_NAME = 'iteration-context';
 
 const AR_COMMANDS = [
   'autoresearch', '/autoresearch:', 'loop', 'debug', 'fix', 'scenario',
@@ -34,9 +36,9 @@ function relativePath(cwd, absPath) {
 }
 
 try {
-  if (!isEnabled('iteration-context')) process.exit(0);
+  if (!isEnabled(HOOK_NAME)) process.exit(0);
 
-  const stdin = safeParseStdin();
+  const stdin = safeParseStdin(HOOK_NAME);
   if (!stdin) process.exit(0);
 
   const state = loadSessionState(stdin);
@@ -80,5 +82,5 @@ try {
   log('iteration-context', { action: 'inject', iterationCount, tsvRows: tsv.total });
   inject(text);
 } catch {
-  process.exit(0);
+  failOpen(HOOK_NAME, 'internal-error');
 }
