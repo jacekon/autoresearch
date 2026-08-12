@@ -661,7 +661,9 @@ assert_exit 0 "dev-rules-reminder: disabled via env var"
 printf '\n--- Testing simplify-gate.cjs ---\n'
 
 # Initialize git repo for diff tracking
-git init > /dev/null 2>&1 || true
+git init > /dev/null 2>&1
+git config user.name "Autoresearch Tests"
+git config user.email "autoresearch-tests@example.invalid"
 
 # Test: No shipping verb
 run_hook "simplify-gate.cjs" '{"prompt":"fix the bug"}'
@@ -670,7 +672,7 @@ assert_exit 0 "simplify-gate: no shipping verb allows"
 # Test: Shipping verb with minimal diff
 echo "test line" > test.txt
 git add test.txt 2>/dev/null || true
-git commit -m "initial" > /dev/null 2>&1 || true
+git commit -m "initial" > /dev/null 2>&1
 run_hook "simplify-gate.cjs" '{"prompt":"ship this"}'
 assert_exit 0 "simplify-gate: small diff allows shipping"
 
