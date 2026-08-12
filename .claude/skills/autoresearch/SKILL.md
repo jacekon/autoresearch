@@ -1,7 +1,7 @@
 ---
 name: autoresearch
 description: "Autonomous iteration loop: modify, verify, keep/discard against any metric"
-version: 2.2.1
+version: 2.2.2
 ---
 
 # Autoresearch — Autonomous Goal-directed Iteration
