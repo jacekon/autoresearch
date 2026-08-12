@@ -5,6 +5,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+RUBRIC_TARGET="${REG_RUBRIC_TARGET:-32}"
 
 ORCH="$REPO_ROOT/scripts/orchestrate.sh"
 FIX="$REPO_ROOT/tests/fixtures/orchestrator"
@@ -14,6 +15,7 @@ pass() { printf '  PASS: %s\n' "$1"; PASS=$((PASS + 1)); TOTAL=$((TOTAL + 1)); }
 fail() { printf '  FAIL: %s\n' "$1"; FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); }
 
 assert_eq()       { [[ "$1" == "$2" ]] && pass "$3" || fail "$3 (expected '$1', got '$2')"; }
+assert_ge()       { [[ "$1" -ge "$2" ]] && pass "$3" || fail "$3 ($1 < $2)"; }
 assert_contains() { echo "$2" | grep -q "$1" && pass "$3" || fail "$3 (missing '$1' in output)"; }
 
 # ============================================================================
@@ -452,6 +454,14 @@ run_validate_state state-bad-type.json
 assert_eq "invalid" "$VS_OUT" "validate-state: non-numeric cycle / non-array units → invalid"
 assert_eq 2 "$VS_CODE"        "validate-state: bad type → exit 2"
 
+run_validate_state state-malformed.json
+assert_eq "invalid" "$VS_OUT" "validate-state: malformed JSON → invalid"
+assert_eq 2 "$VS_CODE"        "validate-state: malformed JSON → exit 2"
+
+run_validate_state state-numeric-predicate.json
+assert_eq "invalid" "$VS_OUT" "validate-state: numeric predicate → invalid"
+assert_eq 2 "$VS_CODE"        "validate-state: numeric predicate → exit 2"
+
 VS_OUT=$(bash "$ORCH" validate-state "$FIX/does-not-exist.json" 2>/dev/null); VS_CODE=$?
 assert_eq "invalid" "$VS_OUT" "validate-state: missing file → invalid"
 assert_eq 2 "$VS_CODE"        "validate-state: missing file → exit 2"
@@ -482,6 +492,10 @@ assert_eq 1 "$SP_CODE"       "screen-state-predicate: escaped-quote dangerous �
 run_screen_state_pred state-quoted-safe-predicate.json
 assert_eq "ok" "$SP_OUT" "screen-state-predicate: benign escaped-quote predicate → ok"
 assert_eq 0 "$SP_CODE"   "screen-state-predicate: benign escaped-quote → exit 0"
+
+run_screen_state_pred state-unicode-danger-predicate.json
+assert_eq "refuse" "$SP_OUT" "screen-state-predicate: Unicode-escaped destructive predicate → refuse"
+assert_eq 1 "$SP_CODE"       "screen-state-predicate: Unicode-escaped destructive predicate → exit 1"
 
 run_screen_state_pred state-missing-predicate.json
 assert_eq "invalid" "$SP_OUT" "screen-state-predicate: no pinned predicate → invalid"
@@ -524,6 +538,70 @@ for mirror in .agents .opencode plugins/autoresearch; do
     pass "parity: $mirror SKILL.md uses non-colon subcommand syntax"
   fi
 done
+
+# Root scripts are the maintained source for every self-contained skill bundle.
+RUNTIME_MIRRORS=(
+  .claude/skills/autoresearch
+  claude-plugin/skills/autoresearch
+  .opencode/skills/autoresearch
+  .agents/skills/autoresearch
+  plugins/autoresearch/skills/autoresearch
+)
+for mirror in "${RUNTIME_MIRRORS[@]}"; do
+  for helper in orchestrate.sh score-regression.sh; do
+    generated="$REPO_ROOT/$mirror/scripts/$helper"
+    if [[ -x "$generated" ]] && cmp -s "$REPO_ROOT/scripts/$helper" "$generated"; then
+      pass "runtime parity: $mirror/scripts/$helper"
+    else
+      fail "runtime parity: $mirror/scripts/$helper missing, non-executable, or stale"
+    fi
+  done
+done
+
+# The real installers must execute the helpers from disposable configuration roots.
+INSTALL_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/autoresearch-install-XXXXXX")
+BROKEN_NODE_BIN="$INSTALL_ROOT/broken-node-bin"
+mkdir -p "$BROKEN_NODE_BIN"
+printf '#!/bin/sh\nexit 127\n' > "$BROKEN_NODE_BIN/node"
+chmod +x "$BROKEN_NODE_BIN/node"
+NODELESS_OUT=""; NODELESS_CODE=0
+for tool in claude opencode codex; do
+  NODELESS_CODE=0
+  NODELESS_OUT=$(PATH="$BROKEN_NODE_BIN:$PATH" bash "$REPO_ROOT/scripts/install.sh" --"$tool" --global \
+    --config-dir "$INSTALL_ROOT/no-node-$tool" --force 2>&1) || NODELESS_CODE=$?
+  assert_eq 1 "$NODELESS_CODE" "$tool install: unavailable Node.js is refused"
+  assert_contains "Node.js 18 or newer is required" "$NODELESS_OUT" "$tool install: Node.js prerequisite is explicit"
+  [[ ! -e "$INSTALL_ROOT/no-node-$tool/skills/autoresearch" ]] \
+    && pass "$tool install: Node.js refusal occurs before files are copied" \
+    || fail "$tool install: Node.js refusal occurs before files are copied"
+done
+
+UNRELATED_CWD="$INSTALL_ROOT/unrelated-project"
+mkdir -p "$UNRELATED_CWD"
+for tool in claude opencode codex; do
+  target="$INSTALL_ROOT/$tool"
+  bash "$REPO_ROOT/scripts/install.sh" --"$tool" --global \
+    --config-dir "$target" --force >/dev/null
+  installed_skill="$target/skills/autoresearch"
+  cp "$REPO_ROOT/tests/fixtures/regression/red-to-red.tsv" "$target/smoke.tsv"
+
+  INSTALLED_ORCH_OUT=$(cd "$UNRELATED_CWD" && bash "$installed_skill/scripts/orchestrate.sh" classify "fix the login bug" 2>/dev/null)
+  assert_eq "fix-broken" "$INSTALLED_ORCH_OUT" "$tool install: bundled orchestrator executes"
+
+  INSTALLED_REG_OUT=$(cd "$UNRELATED_CWD" && bash "$installed_skill/scripts/score-regression.sh" verdict \
+    "$target/smoke.tsv" 2>/dev/null)
+  assert_contains "VERDICT: STABLE" "$INSTALLED_REG_OUT" \
+    "$tool install: bundled regression scorer executes"
+
+  INSTALLED_RUBRIC=$(cd "$UNRELATED_CWD" && bash "$installed_skill/scripts/score-regression.sh" rubric 2>/dev/null | sed -n 's/^SCORE: //p')
+  assert_ge "${INSTALLED_RUBRIC:-0}" "$RUBRIC_TARGET" \
+    "$tool install: default bundled rubric resolves outside checkout"
+
+  printf '  EVIDENCE: host=%s os=%s revision=%s installed_root=%s command=%s result=PASS\n' \
+    "$tool" "$(uname -s)" "$(git -C "$REPO_ROOT" rev-parse HEAD)" "$target" \
+    'orchestrate classify; score-regression verdict; score-regression rubric'
+done
+rm -rf "$INSTALL_ROOT"
 
 # ============================================================================
 printf '\n=== Results: %d/%d passed ===' "$PASS" "$TOTAL"
