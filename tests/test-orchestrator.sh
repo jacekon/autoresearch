@@ -526,9 +526,34 @@ for mirror in .claude claude-plugin .agents .opencode plugins/autoresearch; do
   fi
 done
 
-# Canonical skill spec carries the 2.2.1 version stamp.
-assert_contains "2.2.1" "$(grep -m1 '^version:' "$REPO_ROOT/.claude/skills/autoresearch/SKILL.md")" \
-  "parity: canonical SKILL.md version is 2.2.1"
+# Every skill distribution carries the canonical 2.2.2 version stamp.
+for skill in \
+  .claude/skills/autoresearch/SKILL.md \
+  claude-plugin/skills/autoresearch/SKILL.md \
+  .opencode/skills/autoresearch/SKILL.md \
+  .agents/skills/autoresearch/SKILL.md \
+  plugins/autoresearch/skills/autoresearch/SKILL.md; do
+  assert_eq "version: 2.2.2" "$(grep -m1 '^version:' "$REPO_ROOT/$skill")" \
+    "parity: $skill version is 2.2.2"
+done
+
+VERSION_SURFACES=$(node - "$REPO_ROOT" <<'NODE'
+const root = process.argv[2];
+const read = (file) => require(`${root}/${file}`);
+console.log([
+  read('.claude-plugin/marketplace.json').version,
+  read('.claude-plugin/marketplace.json').plugins[0].version,
+  read('claude-plugin/.claude-plugin/plugin.json').version,
+  read('plugins/autoresearch/.codex-plugin/plugin.json').version,
+].join('\n'));
+NODE
+)
+assert_eq $'2.2.2\n2.2.2\n2.2.2\n2.2.2-codex.0' "$VERSION_SURFACES" \
+  "parity: release manifests use canonical and Codex package versions"
+for badge in README.md guide/README.md; do
+  assert_contains "version-2.2.2-blue" "$(grep -m1 'img.shields.io/badge/version-' "$REPO_ROOT/$badge")" \
+    "parity: $badge badge is 2.2.2"
+done
 
 # No colon-form subcommand may leak into the space/underscore mirrors.
 for mirror in .agents .opencode plugins/autoresearch; do
