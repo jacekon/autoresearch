@@ -941,8 +941,9 @@ printf '\n--- Testing hook log location (global, not per-project) ---\n'
 LOG_HOME="$(mktemp -d)"
 LOG_PROJ="$(mktemp -d)"
 
-# Run a hook that always logs (session-init) with a controlled HOME and cwd.
-( cd "$LOG_PROJ" && echo '{"session_id":"log-loc-test"}' | HOME="$LOG_HOME" node "$HOOKS_DIR/session-init.cjs" >/dev/null 2>&1 ) || true
+# Run a hook that always logs (session-init) with a controlled home and cwd.
+# Node uses USERPROFILE for os.homedir() on Windows and HOME on Unix.
+( cd "$LOG_PROJ" && echo '{"session_id":"log-loc-test"}' | HOME="$LOG_HOME" USERPROFILE="$LOG_HOME" node "$HOOKS_DIR/session-init.cjs" >/dev/null 2>&1 ) || true
 
 # Log must be written under global HOME in a hashed project directory while
 # excluding raw project paths from both the directory and record.
