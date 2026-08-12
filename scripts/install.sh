@@ -288,6 +288,12 @@ install_codex() {
 main() {
   parse_args "$@"
   ensure_context
+  command -v node >/dev/null 2>&1 || die "Node.js 18 or newer is required by the Autoresearch runtime"
+  local node_major
+  node_major="$(node -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null)" \
+    || die "Node.js 18 or newer is required by the Autoresearch runtime"
+  [[ "$node_major" =~ ^[0-9]+$ && "$node_major" -ge 18 ]] \
+    || die "Node.js 18 or newer is required by the Autoresearch runtime"
   local target_root
   target_root="$(get_target_dir "$TOOL" "$LOCATION")"
   confirm_overwrite "$target_root"

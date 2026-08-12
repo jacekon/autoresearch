@@ -64,6 +64,8 @@ Print a banner on every invocation: `[autoresearch] mode: classic | orchestrator
 
 Activated when a plain-language goal is given without `Metric:`/`Verify:`. Classifies the goal into a **Goal archetype** — see `references/orchestrator-routing.md` for the archetype table and router decision table.
 
+Resolve every `scripts/...` path below relative to this installed skill directory, never relative to the caller's working directory.
+
 **Two modes based on archetype:**
 - **Orchestration loop** — predicate-bearing archetypes (ship-ready, optimize-metric, fix-broken, harden, build-feature, explore). Goal has a mechanical Success predicate; the loop runs until that predicate is met.
 - **Single-pass dispatch** — subjective/terminal archetypes (document, what-to-build, decide-design). Routes once to the fitting subcommand (learn / improve / reason), lets it self-terminate, then reports. No loop, no Plateau, no ship gate.

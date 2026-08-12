@@ -544,7 +544,7 @@ CORRUPT_TMP="$TEMP_DIR/corrupt-state"
 mkdir -p "$CORRUPT_TMP"
 CORRUPT_HASH=$(node -e 'const c=require("crypto"); console.log(c.createHash("md5").update(process.cwd() + ":corrupt-state").digest("hex").slice(0,12))')
 printf '{invalid state' > "$CORRUPT_TMP/ar-session-$CORRUPT_HASH.json"
-TMPDIR="$CORRUPT_TMP" run_hook "iteration-context.cjs" '{"session_id":"corrupt-state"}' "runner"
+TMPDIR="$CORRUPT_TMP" TEMP="$CORRUPT_TMP" TMP="$CORRUPT_TMP" run_hook "iteration-context.cjs" '{"session_id":"corrupt-state"}' "runner"
 assert_exit 0 "iteration-context: corrupt session state fails open"
 assert_contains "Guardrail unavailable" "iteration-context: corrupt session state emits visible diagnostic"
 
@@ -661,7 +661,9 @@ assert_exit 0 "dev-rules-reminder: disabled via env var"
 printf '\n--- Testing simplify-gate.cjs ---\n'
 
 # Initialize git repo for diff tracking
-git init > /dev/null 2>&1 || true
+git init > /dev/null 2>&1
+git config user.name "Autoresearch Tests"
+git config user.email "autoresearch-tests@example.invalid"
 
 # Test: No shipping verb
 run_hook "simplify-gate.cjs" '{"prompt":"fix the bug"}'
@@ -670,7 +672,7 @@ assert_exit 0 "simplify-gate: no shipping verb allows"
 # Test: Shipping verb with minimal diff
 echo "test line" > test.txt
 git add test.txt 2>/dev/null || true
-git commit -m "initial" > /dev/null 2>&1 || true
+git commit -m "initial" > /dev/null 2>&1
 run_hook "simplify-gate.cjs" '{"prompt":"ship this"}'
 assert_exit 0 "simplify-gate: small diff allows shipping"
 
@@ -909,10 +911,16 @@ fi
 SYMLINK_INSTALL="$TEMP_DIR/claude-symlink"
 mkdir -p "$SYMLINK_INSTALL/managed"
 printf '{"theme":"dark"}\n' > "$SYMLINK_INSTALL/managed/settings.json"
-ln -s managed/settings.json "$SYMLINK_INSTALL/settings.json"
+node - "$SYMLINK_INSTALL/settings.json" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+fs.symlinkSync(path.join('managed', 'settings.json'), process.argv[2], 'file');
+if (!fs.lstatSync(process.argv[2]).isSymbolicLink()) process.exit(1);
+NODE
 bash "$REPO_ROOT/scripts/install.sh" --claude --global --config-dir "$SYMLINK_INSTALL" --force >/dev/null
 TOTAL=$((TOTAL + 1))
-if [[ -L "$SYMLINK_INSTALL/settings.json" ]] && grep -q 'session-init.cjs' "$SYMLINK_INSTALL/managed/settings.json"; then
+if node -e 'process.exit(require("fs").lstatSync(process.argv[1]).isSymbolicLink() ? 0 : 1)' "$SYMLINK_INSTALL/settings.json" &&
+   grep -q 'session-init.cjs' "$SYMLINK_INSTALL/managed/settings.json"; then
   printf '  PASS: %s\n' "Claude guided install: symlinked settings target is preserved and updated"
   PASS=$((PASS + 1))
 else
@@ -933,8 +941,9 @@ printf '\n--- Testing hook log location (global, not per-project) ---\n'
 LOG_HOME="$(mktemp -d)"
 LOG_PROJ="$(mktemp -d)"
 
-# Run a hook that always logs (session-init) with a controlled HOME and cwd.
-( cd "$LOG_PROJ" && echo '{"session_id":"log-loc-test"}' | HOME="$LOG_HOME" node "$HOOKS_DIR/session-init.cjs" >/dev/null 2>&1 ) || true
+# Run a hook that always logs (session-init) with a controlled home and cwd.
+# Node uses USERPROFILE for os.homedir() on Windows and HOME on Unix.
+( cd "$LOG_PROJ" && echo '{"session_id":"log-loc-test"}' | HOME="$LOG_HOME" USERPROFILE="$LOG_HOME" node "$HOOKS_DIR/session-init.cjs" >/dev/null 2>&1 ) || true
 
 # Log must be written under global HOME in a hashed project directory while
 # excluding raw project paths from both the directory and record.
