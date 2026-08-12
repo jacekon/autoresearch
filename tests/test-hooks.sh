@@ -544,7 +544,7 @@ CORRUPT_TMP="$TEMP_DIR/corrupt-state"
 mkdir -p "$CORRUPT_TMP"
 CORRUPT_HASH=$(node -e 'const c=require("crypto"); console.log(c.createHash("md5").update(process.cwd() + ":corrupt-state").digest("hex").slice(0,12))')
 printf '{invalid state' > "$CORRUPT_TMP/ar-session-$CORRUPT_HASH.json"
-TMPDIR="$CORRUPT_TMP" run_hook "iteration-context.cjs" '{"session_id":"corrupt-state"}' "runner"
+TMPDIR="$CORRUPT_TMP" TEMP="$CORRUPT_TMP" TMP="$CORRUPT_TMP" run_hook "iteration-context.cjs" '{"session_id":"corrupt-state"}' "runner"
 assert_exit 0 "iteration-context: corrupt session state fails open"
 assert_contains "Guardrail unavailable" "iteration-context: corrupt session state emits visible diagnostic"
 
@@ -911,10 +911,16 @@ fi
 SYMLINK_INSTALL="$TEMP_DIR/claude-symlink"
 mkdir -p "$SYMLINK_INSTALL/managed"
 printf '{"theme":"dark"}\n' > "$SYMLINK_INSTALL/managed/settings.json"
-ln -s managed/settings.json "$SYMLINK_INSTALL/settings.json"
+node - "$SYMLINK_INSTALL/settings.json" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+fs.symlinkSync(path.join('managed', 'settings.json'), process.argv[2], 'file');
+if (!fs.lstatSync(process.argv[2]).isSymbolicLink()) process.exit(1);
+NODE
 bash "$REPO_ROOT/scripts/install.sh" --claude --global --config-dir "$SYMLINK_INSTALL" --force >/dev/null
 TOTAL=$((TOTAL + 1))
-if [[ -L "$SYMLINK_INSTALL/settings.json" ]] && grep -q 'session-init.cjs' "$SYMLINK_INSTALL/managed/settings.json"; then
+if node -e 'process.exit(require("fs").lstatSync(process.argv[1]).isSymbolicLink() ? 0 : 1)' "$SYMLINK_INSTALL/settings.json" &&
+   grep -q 'session-init.cjs' "$SYMLINK_INSTALL/managed/settings.json"; then
   printf '  PASS: %s\n' "Claude guided install: symlinked settings target is preserved and updated"
   PASS=$((PASS + 1))
 else
